@@ -166,3 +166,9 @@ cython_debug/
 
 # .csv files
 *.csv
+
+# reports
+reports/
+
+# models
+models/
