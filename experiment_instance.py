@@ -11,10 +11,10 @@ from lib.data import (load,
 from lib.expert import get_expert
 from lib.model import (MLPWithEmbedding,
                        train)
-from lib.optimization import solve
+from lib.optimization.epsilon import solve_epsilon
 from lib.rules import generate_rules
 from lib.rules.utils import (get_rules_covering_instance,
-                             wrap_rules_to_attributes)
+                             wrap_rules_to_attributes, remove_redundant_rules)
 from lib.tools import set_seed
 
 pd.set_option("display.precision", 16)
@@ -32,6 +32,7 @@ pd.set_option("display.precision", 16)
 def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verbose: bool, confirm_measure: str | None,
          confirm_threshold: float | None, expert_func: str | None) -> None:
     set_seed()
+    pd.set_option("display.precision", 4)
     conf = get_config(dataset_name)
     if confirm_measure:
         conf["rules"]["confirm_measure"] = confirm_measure
@@ -65,12 +66,13 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
     idx = dataset.test.y[y_hat_test == class_].index[idx_]
     idx_i = dataset.test.y.index.get_loc(idx)
     sub_rules = get_rules_covering_instance(rules, dataset.test.x.loc[idx], cls=dataset.test.y.loc[idx])
+    sub_rules = remove_redundant_rules(sub_rules)
     sub_rules_wrapped = wrap_rules_to_attributes(sub_rules)
 
-    idcs = get_expert(conf["expert"]["func"])(rules=sub_rules, rules_wrapped=sub_rules_wrapped, dataset=dataset,
+    idcs = get_expert(conf["expert"]["func"])(rules=sub_rules_wrapped, rules_wrapped=sub_rules_wrapped, dataset=dataset,
                                               **conf["expert"])
 
-    solution = solve(sub_rules_wrapped, idcs)
+    solution = solve_epsilon(sub_rules_wrapped, idcs)
 
     sub_ranking = solution.create_ranking(sub_rules_wrapped.iloc[idcs])
     full_ranking = solution.create_ranking(sub_rules_wrapped)
@@ -107,6 +109,26 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
 
         fp.write("\n\nTrust all covering rules re-ranking:\n")
         fp.write(full_ranking.to_string())
+
+        human_readable = sub_rules.loc[full_ranking.index].drop(columns=["support", "confidence"])
+        human_readable["trust"] = full_ranking["trust"]
+        human_readable = human_readable.loc[:, (human_readable != 0).any(axis=0)]
+        names = []
+        for col in human_readable.columns:
+            if "_" in col:
+                pre, val = col.split("_")
+                if "-" in val:
+                    left, right = val.split("-")
+                    names.append(f"{pre}={float(left):.4f}-{float(right):.4f}")
+                else:
+                    names.append(f"{pre}={val}")
+            else:
+                names.append(col)
+        human_readable = human_readable.replace(True, pd.Series(names, human_readable.columns)).replace(False, "")
+        human_readable = human_readable.replace(r"\.0000", "", regex=True)
+
+        fp.write("\n\nHuman readable ranking:\n")
+        fp.write(human_readable.to_string())
 
 
 if __name__ == "__main__":

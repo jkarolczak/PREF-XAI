@@ -24,7 +24,7 @@ breast_cancer = DotDict({
     "rules": DotDict({
         "n_bins": 2,
         "support_threshold": 0.0001,
-        "confirm_measure": "N",
+        "confirm_measure": "S",
         "confirm_threshold": 0.00,
         "confidence_threshold": 1.0
     }),
@@ -52,12 +52,12 @@ churn = DotDict({
     "rules": DotDict({
         "n_bins": 4,
         "support_threshold": 0.0001,
-        "confirm_measure": "N",
+        "confirm_measure": "S",
         "confirm_threshold": 0.00,
         "confidence_threshold": 1.0
     }),
     "expert": DotDict({
-        "func": "diversify_by_properties",
+        "func": "natural",
         "n_rules": 10,
         "columns_preferences": [9, 8, 2, 4, 3, 5, 6, 7, 1, 0]
     })
@@ -80,12 +80,12 @@ churn_telco = DotDict({
     "rules": DotDict({
         "n_bins": 3,
         "support_threshold": 0.0015,
-        "confirm_measure": "S",
-        "confirm_threshold": 0.145,
+        "confirm_measure": "N",
+        "confirm_threshold": 0.0,
         "confidence_threshold": 1.0
     }),
     "expert": DotDict({
-        "func": "diversify_by_properties",
+        "func": "natural",
         "n_rules": 10,
         "columns_preferences": [13, 0, 2, 5, 7, 9, 11, 6, 8, 10, 12, 3, 4, 1]
     })

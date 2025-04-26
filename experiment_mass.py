@@ -13,10 +13,10 @@ from lib.data import (load,
 from lib.expert import get_expert
 from lib.model import (MLPWithEmbedding,
                        train)
-from lib.optimization import solve
+from lib.optimization.epsilon import solve_epsilon
 from lib.rules import generate_rules
 from lib.rules.utils import (get_rules_covering_instance,
-                             wrap_rules_to_attributes)
+                             wrap_rules_to_attributes, remove_redundant_rules)
 from lib.tools import set_seed
 
 pd.set_option("display.precision", 16)
@@ -58,24 +58,41 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
     sub_len = {0: [], 1: []}
 
     for class_ in tqdm([0, 1], desc="Class"):
-        for idx_ in tqdm(range(50), desc="Instance"):
+        for idx_ in tqdm(range(90), desc="Instance"):
             idx = dataset.test.y[y_hat_test == class_].index[idx_]
             sub_rules = get_rules_covering_instance(rules, dataset.test.x.loc[idx], cls=dataset.test.y.loc[idx])
+            sub_rules = remove_redundant_rules(sub_rules)
             if len(sub_rules) <= 10:
                 continue
 
             sub_rules_wrapped = wrap_rules_to_attributes(sub_rules)
             sub_len[class_].append(sub_rules.shape[0])
 
-            idcs = get_expert(conf["expert"]["func"])(rules=sub_rules, rules_wrapped=sub_rules_wrapped, dataset=dataset,
-                                                      **conf["expert"])
+            idcs = get_expert(conf["expert"]["func"])(rules=sub_rules_wrapped, rules_wrapped=sub_rules_wrapped,
+                                                      dataset=dataset, **conf["expert"])
 
-            solution = solve(sub_rules_wrapped, idcs)
+            solution = solve_epsilon(sub_rules_wrapped, idcs)
 
             sub_ranking = solution.create_ranking(sub_rules_wrapped.iloc[idcs])
             full_ranking = solution.create_ranking(sub_rules_wrapped)
+
+            try:
+                assert all([r1 == r2 for r1, r2 in zip(sub_rules_wrapped.iloc[idcs].index, sub_ranking.index)])
+            except Exception as e:
+                continue
+
             for i, position in enumerate(sub_ranking.index):
                 new_pos[class_][i].append(full_ranking.index.get_loc(position))
+
+    quantiles = {cls: {q: [] for q in [0, 25, 50, 75, 100]} for cls in [0, 1]}
+    for cls in [0, 1]:
+        for i, positions in new_pos[cls].items():
+            for q in (0, 25, 50, 75, 100):
+                quantiles[cls][q].append(np.percentile(positions, q))
+    quantiles = {
+        cls: {q: sorted(quantiles[cls][q]) for q in [0, 25, 50, 75, 100]}
+        for cls in [0, 1]
+    }
 
     directory = Path(f"reports/mass/{conf['expert']['func']}")
     directory.mkdir(parents=True, exist_ok=True)
@@ -98,7 +115,7 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
             for i, positions in new_pos[cls].items():
                 fp.write(f"   - Rule {i}: ")
                 for q in (0, 25, 50, 75, 100):
-                    fp.write(f"q{q}: {np.percentile(positions, q):3.2f} ")
+                    fp.write(f"q{q}: {quantiles[cls][q][i] + 1:3.2f} ")
                 fp.write("\n")
 
 
