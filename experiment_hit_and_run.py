@@ -11,13 +11,14 @@ from matplotlib import pyplot as plt
 from lib.config import get_config
 from lib.data import (load,
                       TDatasetName)
-from lib.expert import get_expert
+from lib.experts import get_expert
 from lib.model import (MLPWithEmbedding,
                        train)
 from lib.optimization.hit_and_run import write_initial, aggregate_results
 from lib.rules import generate_rules
 from lib.rules.utils import (get_rules_covering_instance,
-                             wrap_rules_to_attributes, remove_redundant_rules)
+                             wrap_rules_to_attributes,
+                             remove_redundant_rules)
 from lib.tools import set_seed
 
 pd.set_option("display.precision", 16)
@@ -103,8 +104,8 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, mode: Literal["init
             plt.figure(figsize=(8, 6), dpi=300)
 
             plt.title("Hit and Run (1000 iterations)")
-            plt.xlabel("Observed position in the ranking")
-            plt.ylabel("Position indicated by the user")
+            plt.xlabel("Observed position in the ranking of all matching rules ($\\mathcal{S}$)")
+            plt.ylabel("Position of reference rules ranked by the DM ($\\mathcal{T}$)")
 
             plt.grid(axis="both", color="lightgray", linestyle="-", linewidth=0.5, which="both", zorder=-5)
             plt.xlim((-2, len(sub_rules_wrapped)))

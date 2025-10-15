@@ -57,7 +57,7 @@ churn = DotDict({
         "confidence_threshold": 1.0
     }),
     "expert": DotDict({
-        "func": "natural",
+        "func": "cards_deck",
         "n_rules": 10,
         "columns_preferences": [9, 8, 2, 4, 3, 5, 6, 7, 1, 0]
     })
@@ -85,7 +85,7 @@ churn_telco = DotDict({
         "confidence_threshold": 1.0
     }),
     "expert": DotDict({
-        "func": "natural",
+        "func": "cards_deck",
         "n_rules": 10,
         "columns_preferences": [13, 0, 2, 5, 7, 9, 11, 6, 8, 10, 12, 3, 4, 1]
     })

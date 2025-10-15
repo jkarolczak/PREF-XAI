@@ -8,7 +8,8 @@ from lib.rules.frequent_itemsets import (generate_frequent_itemsets,
                                          ItemsetsCache)
 from lib.rules.utils import (complexity,
                              dumminize,
-                             decode_rules)
+                             decode_rules,
+                             remove_redundant_rules)
 
 
 def generate_rules(dataset: IDataset, y_hat: np.ndarray, support_threshold: float, confirm_threshold: float,
@@ -28,7 +29,7 @@ def generate_rules(dataset: IDataset, y_hat: np.ndarray, support_threshold: floa
                                                confirm_measure=confirm_measure)
         RulesCache.save(rules, name=dataset.name, n_bins=n_bins, support_threshold=support_threshold,
                         confirm_measure=confirm_measure, confirm_threshold=confirm_threshold)
-
+    
     support = rules["support"]
     confirm = rules["confirmation"]
     confidence = rules["confidence"]
@@ -40,5 +41,4 @@ def generate_rules(dataset: IDataset, y_hat: np.ndarray, support_threshold: floa
     rules["confidence"] = confidence
     rules["coverage(y)"] = coverage
     rules = rules[rules["confidence"] >= confidence_threshold].reset_index(drop=True)
-
     return rules

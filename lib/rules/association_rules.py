@@ -44,8 +44,6 @@ class RulesCache:
 def generate_association_rules_new(frequent_itemsets: pd.DataFrame, df: pd.DataFrame, confirm_threshold: float,
                                    confirm_measure: str) -> pd.DataFrame:
     rules = []
-    support_dict = {frozenset(itemset): support for itemset, support in
-                    zip(frequent_itemsets["itemsets"], frequent_itemsets["support"])}
     itemsets = frequent_itemsets["itemsets"].tolist()
 
     def process_itemset(itemset):
@@ -74,8 +72,7 @@ def generate_association_rules_new(frequent_itemsets: pd.DataFrame, df: pd.DataF
                         local_rules.append({
                             "antecedents": antecedent,
                             "consequent": consequent,
-                            "support": a + c,
-                            # "support": support_dict[frozenset(itemset)],
+                            "support": (a + c) / (a + b + c + d),
                             "confirmation": measure_value,
                             "confidence": confidence,
                             "coverage(y)": a,

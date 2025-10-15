@@ -8,7 +8,7 @@ import torch
 from lib.config import get_config
 from lib.data import (load,
                       TDatasetName)
-from lib.expert import get_expert
+from lib.experts import get_expert
 from lib.model import (MLPWithEmbedding,
                        train)
 from lib.optimization.epsilon import solve_epsilon

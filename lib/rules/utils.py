@@ -51,7 +51,6 @@ def dumminize(dataset: IDataset, y_hat: np.ndarray, n_bins: int) -> pd.DataFrame
 
     df["y"] = y_hat
     df = pd.get_dummies(df, columns=["y"])
-
     return df
 
 
@@ -254,15 +253,41 @@ def wrap_rules_to_attributes(rules: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: rules with attribute names only
     """
 
-    columns = ["confidence", "coverage(y)", "support", "complexity", "confirmation", "y_0", "y_1"]
-    rules_limited = rules.drop(columns=columns)
+    blacklist = ["confidence", "coverage(y)", "support", "complexity", "confirmation", "y_0", "y_1"]
+    rules_limited = rules.drop(columns=blacklist)
     rules_limited = rules_limited.apply(lambda r: [c.split("_")[0] for c in r.index if r[c]], axis=1)
 
-    attributes = get_attribute_names(rules.drop(columns=columns))
+    attributes = get_attribute_names(rules.drop(columns=blacklist))
 
-    output = pd.DataFrame(columns=attributes + columns)
+    output = pd.DataFrame(columns=attributes + blacklist)
     for i, item in rules_limited.items():
         output.loc[i, list(set(attributes) - set(item))] = False
         output.loc[i, item] = True
-        output.loc[i, columns] = rules.loc[i, columns]
+        output.loc[i, blacklist] = rules.loc[i, blacklist]
     return output
+
+
+def remove_redundant_rules(rules: pd.DataFrame) -> pd.DataFrame:
+    blacklist = ["confidence", "coverage(y)", "support", "complexity", "confirmation", "y_0", "y_1"]
+    binary_df = rules.drop(columns=blacklist)
+    binary_variables = binary_df.to_numpy()
+
+    row_sums = binary_variables.sum(axis=1)
+
+    # Sort so that shorter (more general) rules come first
+    sorted_indices = np.argsort(row_sums)
+    binary_variables = binary_variables[sorted_indices]
+    rules_sorted = rules.iloc[sorted_indices].reset_index(drop=True)
+
+    n_rows = binary_variables.shape[0]
+    mask = np.ones(n_rows, dtype=bool)
+
+    for i in range(n_rows):
+        if not mask[i]:
+            continue
+        for j in range(i + 1, n_rows):  # only check longer or equal rules
+            if mask[j] and np.all(binary_variables[i] <= binary_variables[j]):
+                # If rule j includes rule i, mark j as redundant
+                mask[j] = 0
+
+    return rules_sorted.loc[mask].reset_index(drop=True)

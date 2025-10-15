@@ -5,12 +5,13 @@ import click
 import numpy as np
 import pandas as pd
 import torch
+from scipy.stats import kendalltau
 from tqdm import tqdm
 
 from lib.config import get_config
 from lib.data import (load,
                       TDatasetName)
-from lib.expert import get_expert
+from lib.experts import get_expert
 from lib.model import (MLPWithEmbedding,
                        train)
 from lib.optimization.epsilon import solve_epsilon
@@ -56,6 +57,7 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
     new_pos = {0: {i: [] for i in range(10)},
                1: {i: [] for i in range(10)}}
     sub_len = {0: [], 1: []}
+    kendall = {0: [], 1: []}
 
     for class_ in tqdm([0, 1], desc="Class"):
         for idx_ in tqdm(range(90), desc="Instance"):
@@ -71,10 +73,24 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
             idcs = get_expert(conf["expert"]["func"])(rules=sub_rules_wrapped, rules_wrapped=sub_rules_wrapped,
                                                       dataset=dataset, **conf["expert"])
 
-            solution = solve_epsilon(sub_rules_wrapped, idcs)
+            trust = solve_epsilon(sub_rules_wrapped, idcs)
 
-            sub_ranking = solution.create_ranking(sub_rules_wrapped.iloc[idcs])
-            full_ranking = solution.create_ranking(sub_rules_wrapped)
+            # kendall distance between indices and trust weights
+            weights = trust.w_j
+            weights_ranking = np.argsort(weights)[::-1]
+
+            kendall[class_].append(
+                kendalltau(
+                    weights_ranking,
+                    conf["expert"]["columns_preferences"]
+                )
+            )
+
+            if np.any(trust.to_np()[-3:] != 0):
+                print(dataset_name, class_, idx_)
+                print(trust)
+            sub_ranking = trust.create_ranking(sub_rules_wrapped.iloc[idcs])
+            full_ranking = trust.create_ranking(sub_rules_wrapped)
 
             try:
                 assert all([r1 == r2 for r1, r2 in zip(sub_rules_wrapped.iloc[idcs].index, sub_ranking.index)])
@@ -108,6 +124,9 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
                  f"(+/- {np.std(sub_len[0]).item():.4f})\n")
         fp.write(f" - Number of rules covering instances of class 1: {np.mean(sub_len[1]).item():.4f} "
                  f"(+/- {np.std(sub_len[1]).item():.4f})\n\n")
+
+        fp.write(f"Kendall's tau between trust weights and user preferences for class 0: {np.mean(kendall[0]).item():.4f}\n")
+        fp.write(f"Kendall's tau between trust weights and user preferences for class 1: {np.mean(kendall[1]).item():.4f}\n\n")
 
         fp.write("Positions of the rules selected by the expert in the final ranking:\n")
         for cls in [0, 1]:

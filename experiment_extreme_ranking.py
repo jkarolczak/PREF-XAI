@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from lib.config import get_config
 from lib.data import (load,
                       TDatasetName)
-from lib.expert import get_expert
+from lib.experts import get_expert
 from lib.model import (MLPWithEmbedding,
                        train)
 from lib.optimization.extreme_ranking import solve_extreme_ranking
@@ -64,7 +64,7 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
     sub_rules_wrapped = wrap_rules_to_attributes(sub_rules)
     sub_rules_wrapped = remove_redundant_rules(sub_rules_wrapped)
 
-    idcs = get_expert(conf["expert"]["func"])(rules=sub_rules, rules_wrapped=sub_rules_wrapped, dataset=dataset,
+    idcs = get_expert(conf["expert"]["func"])(rules=sub_rules_wrapped, rules_wrapped=sub_rules_wrapped, dataset=dataset,
                                               **conf["expert"])
     index_ = sub_rules_wrapped.iloc[idcs].index
     solution = solve_extreme_ranking(sub_rules_wrapped, idcs)
