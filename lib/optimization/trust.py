@@ -39,3 +39,13 @@ class Trust:
 
     def to_np(self) -> np.ndarray:
         return np.array([*self.w_j, self.w_supp, self.w_confirm, self.w_complex])
+
+    @staticmethod
+    def from_np(array: np.ndarray, rules: pd.DataFrame) -> "Trust":
+        return Trust(
+            rules=rules,
+            w_j=array[:-3].tolist(),
+            w_supp=array[-3].item(),
+            w_confirm=array[-2].item(),
+            w_complex=array[-1].item()
+        )

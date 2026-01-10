@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import pulp as pl
 
-M = 1000
-INEQ = 1e-6
+M = 1e4
+INEQ = 1e-9
 
 
 def _rules_to_values(rules: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -68,7 +68,7 @@ def _solve_boundary_rule(
         if direction == "highest":
             problem += all_trust[0] >= all_trust[i + 1] + INEQ - M * v_i[i], f"Violation_{i}"
         elif direction == "lowest":
-            problem += all_trust[i + 1] <= all_trust[0] + INEQ - M * v_i[i], f"Violation_{i}"
+            problem += all_trust[i + 1] >= all_trust[0] + INEQ - M * v_i[i], f"Violation_{i}"
 
     for i in range(n_ranking_rules - 1):
         problem += ranking_trust[i] >= ranking_trust[i + 1] + INEQ, f"User_Preference_{i}"
@@ -81,12 +81,12 @@ def _solve_boundary_rule(
     if solver.solve(problem) != pl.LpStatusOptimal:
         raise Exception("Optimization problem did not converge")
 
-    violations = problem.objective.value()
+    violations = int(round(problem.objective.value()))
 
     if direction == "highest":
         return violations + 1
     elif direction == "lowest":
-        return n_other_rules - violations
+        return n_other_rules - violations + 1
 
 
 def _solve_range_rule(
@@ -102,6 +102,9 @@ def _solve_range_rule(
 
 def solve_extreme_ranking(rules: pd.DataFrame, user_preferences: list[int]) -> pd.DataFrame:
     rules = rules.copy()
+    print(rules)
+    rules = rules.drop(
+        columns=["CreditScore", "Age", "Tenure"])
     user_ranking = rules.iloc[user_preferences]
     result = []
 

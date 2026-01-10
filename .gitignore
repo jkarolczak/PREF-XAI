@@ -163,11 +163,15 @@ cython_debug/
 # MacOS
 *.DS_Store
 
-# .csv files
+# data files
 *.csv
+*.pdf
 
-# reports
-reports/
+# outputs
+outputs/
 
 # models
 models/
+
+# notebooks
+*.ipynb

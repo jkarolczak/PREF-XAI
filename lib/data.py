@@ -18,9 +18,9 @@ from sklearn.preprocessing import (OrdinalEncoder,
 from lib import RANDOM_SEED
 
 TDatasetName: TypeAlias = Literal[
-    "breast_cancer",
-    "churn",
-    "churn_telco"
+    "churn_banking",
+    "churn_telco",
+    "heloc"
 ]
 
 
@@ -117,22 +117,13 @@ class IDataset(AbstractDataclass):
         return splits
 
 
-class BreastCancer(IDataset):
+class ChurnBanking(IDataset):
     def __init__(self) -> None:
-        df = pd.read_csv("data/breast_cancer.csv", index_col=False, low_memory=False)
-        df = df.drop(columns=["id"])
-        x = df.drop(columns="diagnosis")
-        y = (df["diagnosis"] == "M").astype(int)
-        super().__init__(name="breast_cancer", x=x, y=y)
-
-
-class Churn(IDataset):
-    def __init__(self) -> None:
-        df = pd.read_csv("data/churn.csv", index_col=0, low_memory=False)
+        df = pd.read_csv("data/churn_banking.csv", index_col=0, low_memory=False)
         df = df.drop(columns=["CustomerId", "Surname"])
         x = df.drop(columns="Exited")
         y = df["Exited"]
-        super().__init__(name="churn", x=x, y=y, cat_idxs=[1, 2, 6, 7, 8])
+        super().__init__(name="churn_banking", x=x, y=y, cat_idxs=[1, 2, 6, 7, 8])
 
 
 class ChurnTelco(IDataset):
@@ -143,6 +134,21 @@ class ChurnTelco(IDataset):
         x = df.drop(columns="churn")
         y = df["churn"]
         super().__init__(name="churn_telco", x=x, y=y, cat_idxs=[1, 2, 3])
+
+
+class Heloc(IDataset):
+    def __init__(self) -> None:
+        df = pd.read_csv("data/heloc.csv", index_col=False, low_memory=False)
+        df = df.drop(columns=["NumInqLast6Mexcl7days",  # "NumTrades90Ever2DerogPubRec", "NumRevolvingTradesWBalance",
+                              "NumBank2NatlTradesWHighUtilization", "NumInstallTradesWBalance",  # "MSinceMostRecentDelq",
+                              "MSinceMostRecentInqexcl7days", "NetFractionInstallBurden", "MSinceOldestTradeOpen",
+                              "PercentTradesWBalance"])
+        x = df.drop(columns=["RiskPerformance"])
+        mask = (x.values == -9.0).sum(axis=1) != x.shape[1]
+        y = (df["RiskPerformance"] == "Good").astype(int)
+        x = x.loc[mask]
+        y = y.loc[mask]
+        super().__init__(name="heloc", x=x, y=y, cat_idxs=[])
 
 
 def load(name: TDatasetName) -> IDataset:

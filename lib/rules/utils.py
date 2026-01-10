@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -79,17 +81,21 @@ def column_to_range(c: str) -> dict[str, float | str]:
     """Transforms a column name to a dictionary with range values.
 
     Args:
-        c (str): columns name
+        c (str): columns name (e.g., 'balance_-3313.0-171.99')
 
     Returns:
         dict[str, float | str]: dictionary with range values
     """
+    match = re.match(r"^(.*)_(-?\d+\.?\d*)-(-?\d+\.?\d*)$", c)
+
+    if not match:
+        raise ValueError(f"Could not parse column name: {c}")
 
     return {
         "column": c,
-        "attribute": c.split("_")[0],
-        "range_min": float(c.split("_")[1].split("-")[0]),
-        "range_max": float(c.split("_")[1].split("-")[1]),
+        "attribute": match.group(1),
+        "range_min": float(match.group(2)),
+        "range_max": float(match.group(3)),
     }
 
 

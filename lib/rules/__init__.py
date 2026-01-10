@@ -29,7 +29,7 @@ def generate_rules(dataset: IDataset, y_hat: np.ndarray, support_threshold: floa
                                                confirm_measure=confirm_measure)
         RulesCache.save(rules, name=dataset.name, n_bins=n_bins, support_threshold=support_threshold,
                         confirm_measure=confirm_measure, confirm_threshold=confirm_threshold)
-    
+
     support = rules["support"]
     confirm = rules["confirmation"]
     confidence = rules["confidence"]

@@ -11,7 +11,7 @@ from tqdm import tqdm
 from lib.config import get_config
 from lib.data import (load,
                       TDatasetName)
-from lib.experts import get_expert
+from lib.dms import get_dm
 from lib.model import (MLPWithEmbedding,
                        train)
 from lib.optimization.epsilon import solve_epsilon
@@ -64,19 +64,22 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
             idx = dataset.test.y[y_hat_test == class_].index[idx_]
             sub_rules = get_rules_covering_instance(rules, dataset.test.x.loc[idx], cls=dataset.test.y.loc[idx])
             sub_rules = remove_redundant_rules(sub_rules)
+            print(sub_rules.shape)
             if len(sub_rules) <= 10:
                 continue
 
             sub_rules_wrapped = wrap_rules_to_attributes(sub_rules)
             sub_len[class_].append(sub_rules.shape[0])
 
-            idcs = get_expert(conf["expert"]["func"])(rules=sub_rules_wrapped, rules_wrapped=sub_rules_wrapped,
-                                                      dataset=dataset, **conf["expert"])
+            dm_cls = get_dm(conf["expert"]["type"])
+            dm = dm_cls(rules=sub_rules_wrapped, **conf["expert"])
 
-            trust = solve_epsilon(sub_rules_wrapped, idcs)
+            idcs = dm.reference_ranking()
 
-            # kendall distance between indices and trust weights
-            weights = trust.w_j
+            trust_epsilon = solve_epsilon(sub_rules_wrapped, idcs)
+
+            # kendall distance between indices and trust_epsilon weights
+            weights = trust_epsilon.w_j
             weights_ranking = np.argsort(weights)[::-1]
 
             kendall[class_].append(
@@ -86,11 +89,11 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
                 )
             )
 
-            if np.any(trust.to_np()[-3:] != 0):
+            if np.any(trust_epsilon.to_np()[-3:] != 0):
                 print(dataset_name, class_, idx_)
-                print(trust)
-            sub_ranking = trust.create_ranking(sub_rules_wrapped.iloc[idcs])
-            full_ranking = trust.create_ranking(sub_rules_wrapped)
+                print(trust_epsilon)
+            sub_ranking = trust_epsilon.create_ranking(sub_rules_wrapped.iloc[idcs])
+            full_ranking = trust_epsilon.create_ranking(sub_rules_wrapped)
 
             try:
                 assert all([r1 == r2 for r1, r2 in zip(sub_rules_wrapped.iloc[idcs].index, sub_ranking.index)])
@@ -104,13 +107,16 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
     for cls in [0, 1]:
         for i, positions in new_pos[cls].items():
             for q in (0, 25, 50, 75, 100):
-                quantiles[cls][q].append(np.percentile(positions, q))
-    quantiles = {
-        cls: {q: sorted(quantiles[cls][q]) for q in [0, 25, 50, 75, 100]}
-        for cls in [0, 1]
-    }
+                try:
+                    quantiles[cls][q].append(np.percentile(positions, q))
+                except:
+                    pass
+    for cls in [0, 1]:
+        for q in (0, 25, 50, 75, 100):
+            if q in quantiles[cls]:
+                quantiles[cls][q] = sorted(quantiles[cls][q])
 
-    directory = Path(f"reports/mass/{conf['expert']['func']}")
+    directory = Path(f"reports/mass/{conf['expert']['type']}")
     directory.mkdir(parents=True, exist_ok=True)
     file = directory / f"{dataset_name}_{conf['rules']['confirm_measure']}.txt"
     with file.open("w") as fp:
@@ -125,8 +131,10 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
         fp.write(f" - Number of rules covering instances of class 1: {np.mean(sub_len[1]).item():.4f} "
                  f"(+/- {np.std(sub_len[1]).item():.4f})\n\n")
 
-        fp.write(f"Kendall's tau between trust weights and user preferences for class 0: {np.mean(kendall[0]).item():.4f}\n")
-        fp.write(f"Kendall's tau between trust weights and user preferences for class 1: {np.mean(kendall[1]).item():.4f}\n\n")
+        fp.write(
+            f"Kendall's tau between trust_epsilon weights and user preferences for class 0: {np.mean(kendall[0]).item():.4f}\n")
+        fp.write(
+            f"Kendall's tau between trust_epsilon weights and user preferences for class 1: {np.mean(kendall[1]).item():.4f}\n\n")
 
         fp.write("Positions of the rules selected by the expert in the final ranking:\n")
         for cls in [0, 1]:
@@ -134,7 +142,8 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
             for i, positions in new_pos[cls].items():
                 fp.write(f"   - Rule {i}: ")
                 for q in (0, 25, 50, 75, 100):
-                    fp.write(f"q{q}: {quantiles[cls][q][i] + 1:3.2f} ")
+                    if q in quantiles[cls]:
+                        fp.write(f"q{q}: {quantiles[cls][q][i] + 1:3.2f} ")
                 fp.write("\n")
 
 
