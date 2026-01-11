@@ -114,13 +114,13 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
     sub_rules = remove_redundant_rules(sub_rules)
     sub_rules_wrapped = wrap_rules_to_attributes(sub_rules)
     dm = get_dm(conf.expert.type)(rules=sub_rules_wrapped, **conf.expert)
-    reference_ranking = dm.reference_ranking()
+    reference_ranking = dm.reference_ranking
     full_reference_ranking = dm.create_ranking(sub_rules_wrapped)
     if exclude:
         exclude_cols_template = [col for idx, col in enumerate(sub_rules_wrapped.columns) if idx in excluded_preferences]
         sub_rules_wrapped = sub_rules_wrapped.drop(columns=exclude_cols_template, errors="ignore")
 
-    trusts_hr = solve_hr(sub_rules_wrapped, reference_ranking, n_iters=hr_iters)
+    trusts_hr = solve_hr(sub_rules_wrapped, dm, n_iters=hr_iters)
     occurrences = [[] for _ in reference_ranking]
     for trust in trusts_hr:
         ranking = trust.create_ranking(sub_rules_wrapped)
@@ -158,7 +158,7 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
         fig_file += f"_exclude_{exclude}"
     plt.savefig(f"{fig_file}.pdf")
 
-    trust_epsilon = solve_epsilon(sub_rules_wrapped, reference_ranking)
+    trust_epsilon = solve_epsilon(sub_rules_wrapped, dm)
     trust_hr_centroid = trusts_to_centroid(trusts_hr)
     hr_rules_on_first_pos = rules_on_first_pos(trusts_hr, sub_rules_wrapped)
 
