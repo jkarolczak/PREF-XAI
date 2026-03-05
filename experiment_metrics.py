@@ -54,6 +54,12 @@ def process_single_instance(
     ranking_epsilon = trust_epsilon.create_ranking(sub_rules)
     hr_rules_on_first_pos = rules_on_first_pos(trusts_hr, sub_rules)
 
+    new_top5_hr = len(set(ranking_hr_centroid.index[:5]) - set(dm.reference_ranking))
+    new_top5_epsilon = len(set(ranking_epsilon.index[:5]) - set(dm.reference_ranking))
+
+    discovered_rules_hr = ranking_hr_centroid.index.get_loc(dm.reference_ranking[0])
+    discovered_rules_epsilon = ranking_epsilon.index.get_loc(dm.reference_ranking[0])
+
     return {
         "class": class_,
         "idx": idx_,
@@ -67,6 +73,10 @@ def process_single_instance(
         "kendall_ranking_epsilon": kendalltau(ranking_expert.index, ranking_epsilon.index).statistic.item(),
         "kendall_weights_hr": kendalltau(dm.trust.to_np(), trust_hr_centroid.to_np()).statistic.item(),
         "kendall_weights_epsilon": kendalltau(dm.trust.to_np(), trust_epsilon.to_np()).statistic.item(),
+        "discovered_rules_hr": discovered_rules_hr,
+        "discovered_rules_epsilon": discovered_rules_epsilon,
+        "new_top5_hr": new_top5_hr,
+        "new_top5_epsilon": new_top5_epsilon,
         "covering_rules": len(sub_rules),
     }
 

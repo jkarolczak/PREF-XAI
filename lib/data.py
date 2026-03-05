@@ -20,7 +20,9 @@ from lib import RANDOM_SEED
 TDatasetName: TypeAlias = Literal[
     "churn_banking",
     "churn_telco",
-    "heloc"
+    "heloc",
+    "pima",
+    "wisconsin"
 ]
 
 
@@ -149,6 +151,24 @@ class Heloc(IDataset):
         x = x.loc[mask]
         y = y.loc[mask]
         super().__init__(name="heloc", x=x, y=y, cat_idxs=[])
+
+
+class Pima(IDataset):
+    def __init__(self) -> None:
+        df = pd.read_csv("data/pima.csv", index_col=False, low_memory=False)
+        x = df.drop(columns="Outcome")
+        y = df["Outcome"]
+        super().__init__(name="pima", x=x, y=y, cat_idxs=[])
+
+
+class Wisconsin(IDataset):
+    def __init__(self) -> None:
+        df = pd.read_csv("data/wisconsin.csv", index_col=False, low_memory=False, na_values="?")
+        df = df.drop(columns=["Sample code number"])
+        df = df.dropna(axis=0)
+        x = df.drop(columns="Class")
+        y = (df["Class"] == 4).astype(int)
+        super().__init__(name="wisconsin", x=x, y=y, cat_idxs=[])
 
 
 def load(name: TDatasetName) -> IDataset:

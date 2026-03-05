@@ -103,6 +103,68 @@ heloc = DotDict({
     })
 })
 
+pima = DotDict({
+    "model": DotDict({
+        "hidden_dims": [32, 32],
+        "output_dim": 2,
+        "embedding_dim": 2
+    }),
+    "train": DotDict({
+        "batch_size": 32,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-5,
+        "epochs": 300,
+        "pos_weight": [1.0, 2.0],
+        "threshold": 0.2,
+    }),
+    "rules": DotDict({
+        "n_bins": 3,
+        "support_threshold": 0.00001,
+        "confirm_measure": "N",
+        "confirm_threshold": 0.0,
+        "confidence_threshold": 1.0
+    }),
+    "expert": DotDict({
+        "type": "RandomDM",
+        "n_reference_rules": 10,
+    }),
+    "optimization": DotDict({
+        "top_k": None,
+        "hr_iters": 10000
+    })
+})
+
+wisconsin = DotDict({
+    "model": DotDict({
+        "hidden_dims": [32, 32],
+        "output_dim": 2,
+        "embedding_dim": 2
+    }),
+    "train": DotDict({
+        "batch_size": 64,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-5,
+        "epochs": 150,
+        "pos_weight": [1.0, 1.0],
+        "threshold": 0.4,
+    }),
+    "rules": DotDict({
+        "n_bins": 3,
+        "support_threshold": 0.00001,
+        "confirm_measure": "N",
+        "confirm_threshold": 0.0,
+        "confidence_threshold": 1.0
+    }),
+    "expert": DotDict({
+        "type": "RandomDM",
+        "n_reference_rules": 10,
+    }),
+    "optimization": DotDict({
+        "top_k": None,
+        "hr_iters": 10000
+    })
+})
+
 
 def get_config(name: TDatasetName) -> DotDict:
     return globals()[name]

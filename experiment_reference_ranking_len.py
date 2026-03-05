@@ -15,8 +15,7 @@ from lib.dms import get_dm
 from lib.metrics import set_jaccard
 from lib.model import MLPWithEmbedding
 from lib.optimization.epsilon import solve_epsilon
-from lib.optimization.hit_and_run import (solve_hr,
-                                          trusts_to_centroid, rules_on_first_pos)
+from lib.optimization.hit_and_run import (solve_hr, trusts_to_centroid, rules_on_first_pos)
 from lib.rules import generate_rules
 from lib.rules.utils import (get_rules_covering_instance,
                              wrap_rules_to_attributes,
@@ -49,13 +48,13 @@ def process_single_instance(
     for n_reference_rules in range(2, 21):
         conf["expert"]["n_reference_rules"] = n_reference_rules
 
-        dm = dm_cls(rules=sub_rules, **conf["expert"])
+        dm_cls = get_dm(conf.expert.type)
+        dm = dm_cls(rules=sub_rules, **conf.expert)
 
-        reference_ranking = dm.reference_ranking()
         ranking_expert = dm.create_ranking(sub_rules)
 
-        trusts_hr = solve_hr(sub_rules, reference_ranking)
-        trust_epsilon = solve_epsilon(sub_rules, reference_ranking)
+        trusts_hr = solve_hr(sub_rules, dm, n_iters=conf.optimization.hr_iters, top_k=conf.optimization.top_k)
+        trust_epsilon = solve_epsilon(sub_rules, dm, top_k=conf.optimization.top_k)
 
         trust_hr_centroid = trusts_to_centroid(trusts_hr)
         ranking_hr_centroid = trust_hr_centroid.create_ranking(sub_rules)
