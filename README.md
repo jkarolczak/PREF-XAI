@@ -16,9 +16,9 @@ tailors explanations to individual user preferences without sacrificing the pred
 - **Preference Modeling:** Employs holistic preference elicitation through simulated Decision Makers (DMs) ranking a
   small reference set of rules.
 - **Optimization Strategies:**
-    - Max $\epsilon$ (Epsilon Maximization): Identifies a single, maximum-margin utility function that discriminates
+    - Epsilon Maximization: Identifies a single, maximum-margin utility function that discriminates
       user-ranked rules.
-    - $H\&R^C$ (Hit-and-Run Centroid): Utilizes SMAA to uniformly sample the compatible weight space via Hit-and-Run
+    - Hit-and-Run Centroid: Utilizes SMAA to uniformly sample the compatible weight space via Hit-and-Run
       MCMC sampling to derive highly robust, expected preference parameters.
 
 ## Repository Structure
