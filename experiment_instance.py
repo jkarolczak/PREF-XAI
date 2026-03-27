@@ -17,7 +17,7 @@ from lib.metrics import set_jaccard
 from lib.model import (MLPWithEmbedding,
                        train)
 from lib.optimization.epsilon import solve_epsilon
-from lib.optimization.hit_and_run import solve_hr, trusts_to_centroid, rules_on_first_pos
+from lib.optimization.hit_and_run import solve_hr, pruss_to_centroid, rules_on_first_pos
 from lib.rules import generate_rules
 from lib.rules.utils import (get_rules_covering_instance,
                              wrap_rules_to_attributes,
@@ -120,10 +120,10 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
         exclude_cols_template = [col for idx, col in enumerate(sub_rules_wrapped.columns) if idx in excluded_preferences]
         sub_rules_wrapped = sub_rules_wrapped.drop(columns=exclude_cols_template, errors="ignore")
 
-    trusts_hr = solve_hr(sub_rules_wrapped, dm, n_iters=hr_iters)
+    pruss_hr = solve_hr(sub_rules_wrapped, dm, n_iters=hr_iters)
     occurrences = [[] for _ in reference_ranking]
-    for trust in trusts_hr:
-        ranking = trust.create_ranking(sub_rules_wrapped)
+    for prus in pruss_hr:
+        ranking = prus.create_ranking(sub_rules_wrapped)
         for j, i in enumerate(reference_ranking):
             pos = ranking.index.get_loc(i)
             occurrences[j].append(pos)
@@ -158,9 +158,9 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
         fig_file += f"_exclude_{exclude}"
     plt.savefig(f"{fig_file}.pdf")
 
-    trust_epsilon = solve_epsilon(sub_rules_wrapped, dm)
-    trust_hr_centroid = trusts_to_centroid(trusts_hr)
-    hr_rules_on_first_pos = rules_on_first_pos(trusts_hr, sub_rules_wrapped)
+    prus_epsilon = solve_epsilon(sub_rules_wrapped, dm)
+    prus_hr_centroid = pruss_to_centroid(pruss_hr)
+    hr_rules_on_first_pos = rules_on_first_pos(pruss_hr, sub_rules_wrapped)
 
     directory = Path(f"outputs/reports/instance/{conf.expert.type}")
     directory.mkdir(parents=True, exist_ok=True)
@@ -181,7 +181,7 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
         fp.write(f" - Ranking of the attributes: {dataset.train.x.columns[conf.expert.columns_preferences].to_list()}\n")
         fp.write(f"{sub_rules_wrapped.iloc[reference_ranking]}\n\n")
 
-        for solution, method in zip([trust_epsilon, trust_hr_centroid], ["Epsilon", "Hit-and-Run Centroid"]):
+        for solution, method in zip([prus_epsilon, prus_hr_centroid], ["Epsilon", "Hit-and-Run Centroid"]):
             fp.write("\n\n\n========================================\n")
             fp.write(f"{method}:\n")
             fp.write("=========================================\n")
@@ -189,17 +189,17 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
             sub_ranking = solution.create_ranking(sub_rules_wrapped.iloc[reference_ranking])
             full_ranking = solution.create_ranking(sub_rules_wrapped)
 
-            fp.write("Trust:\n")
+            fp.write("Prus:\n")
             fp.write(f"{solution}\n\n")
 
-            fp.write("Trust expert's preferences re-ranking:\n")
+            fp.write("Prus expert's preferences re-ranking:\n")
             fp.write(sub_ranking.to_string())
 
-            fp.write("\n\nTrust all covering rules re-ranking:\n")
+            fp.write("\n\nPrus all covering rules re-ranking:\n")
             fp.write(full_ranking.to_string())
 
             kendall_ranking = kendalltau(full_ranking.index, full_reference_ranking.index).statistic.item()
-            kendall_weights = kendalltau(dm.trust.to_np(), solution.to_np()).statistic.item()
+            kendall_weights = kendalltau(dm.prus.to_np(), solution.to_np()).statistic.item()
             jaccard_5 = set_jaccard(sub_ranking.index[:5], reference_ranking[:5])
             jaccard_10 = set_jaccard(sub_ranking.index[:10], reference_ranking[:10])
             fp.write("\n\nMetrics:\n")
@@ -209,7 +209,7 @@ def main(dataset_name: TDatasetName, class_: int, idx_: int, retrain: bool, verb
             fp.write(f" - Kendall Tau Weights: {kendall_weights:.4f}\n")
 
             human_readable = sub_rules.loc[full_ranking.index].drop(columns=["support", "confidence"])
-            human_readable["trust"] = full_ranking["trust"]
+            human_readable["prus"] = full_ranking["prus"]
             human_readable = human_readable.loc[:, (human_readable != 0).any(axis=0)]
             names = []
             for col in human_readable.columns:

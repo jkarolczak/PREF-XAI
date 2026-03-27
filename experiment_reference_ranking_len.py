@@ -15,7 +15,7 @@ from lib.dms import get_dm
 from lib.metrics import set_jaccard
 from lib.model import MLPWithEmbedding
 from lib.optimization.epsilon import solve_epsilon
-from lib.optimization.hit_and_run import (solve_hr, trusts_to_centroid, rules_on_first_pos)
+from lib.optimization.hit_and_run import (solve_hr, pruss_to_centroid, rules_on_first_pos)
 from lib.rules import generate_rules
 from lib.rules.utils import (get_rules_covering_instance,
                              wrap_rules_to_attributes,
@@ -53,13 +53,13 @@ def process_single_instance(
 
         ranking_expert = dm.create_ranking(sub_rules)
 
-        trusts_hr = solve_hr(sub_rules, dm, n_iters=conf.optimization.hr_iters, top_k=conf.optimization.top_k)
-        trust_epsilon = solve_epsilon(sub_rules, dm, top_k=conf.optimization.top_k)
+        pruss_hr = solve_hr(sub_rules, dm, n_iters=conf.optimization.hr_iters, top_k=conf.optimization.top_k)
+        prus_epsilon = solve_epsilon(sub_rules, dm, top_k=conf.optimization.top_k)
 
-        trust_hr_centroid = trusts_to_centroid(trusts_hr)
-        ranking_hr_centroid = trust_hr_centroid.create_ranking(sub_rules)
-        ranking_epsilon = trust_epsilon.create_ranking(sub_rules)
-        hr_rules_on_first_pos = rules_on_first_pos(trusts_hr, sub_rules)
+        prus_hr_centroid = pruss_to_centroid(pruss_hr)
+        ranking_hr_centroid = prus_hr_centroid.create_ranking(sub_rules)
+        ranking_epsilon = prus_epsilon.create_ranking(sub_rules)
+        hr_rules_on_first_pos = rules_on_first_pos(pruss_hr, sub_rules)
 
         instance_results.append({
             "class": class_,
@@ -73,8 +73,8 @@ def process_single_instance(
             "jaccard_10_hr_first_pos": set_jaccard(hr_rules_on_first_pos, ranking_expert.index[:10]),
             "kendall_ranking_hr": kendalltau(ranking_expert.index, ranking_hr_centroid.index).statistic.item(),
             "kendall_ranking_epsilon": kendalltau(ranking_expert.index, ranking_epsilon.index).statistic.item(),
-            "kendall_weights_hr": kendalltau(dm.trust.to_np(), trust_hr_centroid.to_np()).statistic.item(),
-            "kendall_weights_epsilon": kendalltau(dm.trust.to_np(), trust_epsilon.to_np()).statistic.item(),
+            "kendall_weights_hr": kendalltau(dm.prus.to_np(), prus_hr_centroid.to_np()).statistic.item(),
+            "kendall_weights_epsilon": kendalltau(dm.prus.to_np(), prus_epsilon.to_np()).statistic.item(),
             "covering_rules": len(sub_rules),
         })
 

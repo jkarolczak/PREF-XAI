@@ -76,10 +76,10 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
 
             idcs = dm.reference_ranking()
 
-            trust_epsilon = solve_epsilon(sub_rules_wrapped, idcs)
+            prus_epsilon = solve_epsilon(sub_rules_wrapped, idcs)
 
-            # kendall distance between indices and trust_epsilon weights
-            weights = trust_epsilon.w_j
+            # kendall distance between indices and prus_epsilon weights
+            weights = prus_epsilon.w_j
             weights_ranking = np.argsort(weights)[::-1]
 
             kendall[class_].append(
@@ -89,11 +89,11 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
                 )
             )
 
-            if np.any(trust_epsilon.to_np()[-3:] != 0):
+            if np.any(prus_epsilon.to_np()[-3:] != 0):
                 print(dataset_name, class_, idx_)
-                print(trust_epsilon)
-            sub_ranking = trust_epsilon.create_ranking(sub_rules_wrapped.iloc[idcs])
-            full_ranking = trust_epsilon.create_ranking(sub_rules_wrapped)
+                print(prus_epsilon)
+            sub_ranking = prus_epsilon.create_ranking(sub_rules_wrapped.iloc[idcs])
+            full_ranking = prus_epsilon.create_ranking(sub_rules_wrapped)
 
             try:
                 assert all([r1 == r2 for r1, r2 in zip(sub_rules_wrapped.iloc[idcs].index, sub_ranking.index)])
@@ -132,9 +132,9 @@ def main(dataset_name: TDatasetName, retrain: bool, verbose: bool) -> None:
                  f"(+/- {np.std(sub_len[1]).item():.4f})\n\n")
 
         fp.write(
-            f"Kendall's tau between trust_epsilon weights and user preferences for class 0: {np.mean(kendall[0]).item():.4f}\n")
+            f"Kendall's tau between prus_epsilon weights and user preferences for class 0: {np.mean(kendall[0]).item():.4f}\n")
         fp.write(
-            f"Kendall's tau between trust_epsilon weights and user preferences for class 1: {np.mean(kendall[1]).item():.4f}\n\n")
+            f"Kendall's tau between prus_epsilon weights and user preferences for class 1: {np.mean(kendall[1]).item():.4f}\n\n")
 
         fp.write("Positions of the rules selected by the expert in the final ranking:\n")
         for cls in [0, 1]:

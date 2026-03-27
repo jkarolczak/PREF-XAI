@@ -16,7 +16,7 @@ from lib.metrics import set_jaccard
 from lib.model import MLPWithEmbedding
 from lib.optimization.epsilon import solve_epsilon
 from lib.optimization.hit_and_run import (solve_hr,
-                                          trusts_to_centroid, rules_on_first_pos)
+                                          pruss_to_centroid, rules_on_first_pos)
 from lib.rules import generate_rules
 from lib.rules.utils import (get_rules_covering_instance,
                              wrap_rules_to_attributes,
@@ -62,10 +62,10 @@ def process_single_instance(
         }
 
         try:
-            trusts_hr = solve_hr(sub_rules, dm, n_iters=conf["optimization"]["hr_iters"], top_k=k)
-            trust_hr_centroid = trusts_to_centroid(trusts_hr)
-            ranking_hr_centroid = trust_hr_centroid.create_ranking(sub_rules)
-            hr_rules_on_first_pos = rules_on_first_pos(trusts_hr, sub_rules)
+            pruss_hr = solve_hr(sub_rules, dm, n_iters=conf["optimization"]["hr_iters"], top_k=k)
+            prus_hr_centroid = pruss_to_centroid(pruss_hr)
+            ranking_hr_centroid = prus_hr_centroid.create_ranking(sub_rules)
+            hr_rules_on_first_pos = rules_on_first_pos(pruss_hr, sub_rules)
             discovered_rules = ranking_hr_centroid.index.get_loc(dm.reference_ranking[0])
             temp_dict.update({
                 "jaccard_5_ranking_hr": set_jaccard(ranking_hr_centroid.index[:5], ranking_expert.index[:5]),
@@ -73,7 +73,7 @@ def process_single_instance(
                 "jaccard_10_ranking_hr": set_jaccard(ranking_hr_centroid.index[:10], ranking_expert.index[:10]),
                 "jaccard_10_hr_first_pos": set_jaccard(hr_rules_on_first_pos, ranking_expert.index[:10]),
                 "kendall_ranking_hr": kendalltau(ranking_expert.index, ranking_hr_centroid.index).statistic.item(),
-                "kendall_weights_hr": kendalltau(dm.attributes_preference, -trust_hr_centroid.to_np()).statistic,
+                "kendall_weights_hr": kendalltau(dm.attributes_preference, -prus_hr_centroid.to_np()).statistic,
                 "discovered_rules_hr": discovered_rules,
             })
         except Exception as e:
@@ -83,14 +83,14 @@ def process_single_instance(
                 raise e
 
         try:
-            trust_epsilon = solve_epsilon(sub_rules, dm, top_k=k)
-            ranking_epsilon = trust_epsilon.create_ranking(sub_rules)
+            prus_epsilon = solve_epsilon(sub_rules, dm, top_k=k)
+            ranking_epsilon = prus_epsilon.create_ranking(sub_rules)
             discovered_rules = ranking_epsilon.index.get_loc(dm.reference_ranking[0])
             temp_dict.update({
                 "jaccard_5_ranking_epsilon": set_jaccard(ranking_epsilon.index[:5], ranking_expert.index[:5]),
                 "jaccard_10_ranking_epsilon": set_jaccard(ranking_epsilon.index[:10], ranking_expert.index[:10]),
                 "kendall_ranking_epsilon": kendalltau(ranking_expert.index, ranking_epsilon.index).statistic.item(),
-                "kendall_weights_epsilon": kendalltau(dm.attributes_preference, -trust_epsilon.to_np()).statistic,
+                "kendall_weights_epsilon": kendalltau(dm.attributes_preference, -prus_epsilon.to_np()).statistic,
                 "discovered_rules_epsilon": discovered_rules,
             })
         except Exception as e:

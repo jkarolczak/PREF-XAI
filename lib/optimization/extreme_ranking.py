@@ -43,7 +43,7 @@ def _solve_boundary_rule(
     w_confirm = pl.LpVariable("w_confirm", cat="Continuous", lowBound=0, upBound=1)
     w_complex = pl.LpVariable("w_complex", cat="Continuous", lowBound=0, upBound=1)
 
-    ranking_trust = [
+    ranking_prus = [
         pl.lpSum(w_j[j] * ranking_conditions[i, j] for j in range(n_conditions)) +
         w_supp * ranking_support[i] +
         w_confirm * ranking_confirmation[i] -
@@ -51,8 +51,8 @@ def _solve_boundary_rule(
         for i in range(n_ranking_rules)
     ]
 
-    # Trust calculation definition
-    all_trust = [
+    # Prus calculation definition
+    all_prus = [
         pl.lpSum(w_j[j] * all_conditions[i, j] for j in range(n_conditions)) +
         w_supp * all_support[i] +
         w_confirm * all_confirmation[i] -
@@ -66,12 +66,12 @@ def _solve_boundary_rule(
     # Constraints: User preferences
     for i in range(n_other_rules):
         if direction == "highest":
-            problem += all_trust[0] >= all_trust[i + 1] + INEQ - M * v_i[i], f"Violation_{i}"
+            problem += all_prus[0] >= all_prus[i + 1] + INEQ - M * v_i[i], f"Violation_{i}"
         elif direction == "lowest":
-            problem += all_trust[i + 1] >= all_trust[0] + INEQ - M * v_i[i], f"Violation_{i}"
+            problem += all_prus[i + 1] >= all_prus[0] + INEQ - M * v_i[i], f"Violation_{i}"
 
     for i in range(n_ranking_rules - 1):
-        problem += ranking_trust[i] >= ranking_trust[i + 1] + INEQ, f"User_Preference_{i}"
+        problem += ranking_prus[i] >= ranking_prus[i + 1] + INEQ, f"User_Preference_{i}"
 
     # Objective function
     problem += pl.lpSum(v_i), "Minimize_Violations"

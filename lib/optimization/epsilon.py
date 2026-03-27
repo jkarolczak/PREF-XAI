@@ -1,15 +1,15 @@
 import pandas as pd
 import pulp as pl
+from lib.optimization.prus import Prus
 
 from lib.dms.interface_dm import IDM
-from lib.optimization.trust import Trust
 
 
 def solve_epsilon(
         rules: pd.DataFrame,
         dm: IDM,
         top_k: int | None = None
-) -> Trust:
+) -> Prus:
     special_columns = [col for col in rules.columns if col.startswith("y_")] + ["support", "confirmation", "complexity",
                                                                                 "confidence", "coverage(y)"]
     # Extract user preferences only
@@ -40,8 +40,8 @@ def solve_epsilon(
     w_confirm = pl.LpVariable("w_confirm", lowBound=0, upBound=1)
     w_complex = pl.LpVariable("w_complex", lowBound=0, upBound=1)
 
-    # Trust calculation definition
-    trust = [
+    # Prus calculation definition
+    prus = [
         pl.lpSum(w_j[i] * conditions[j, i] for i in range(n_conditions)) +
         w_supp * support[j] +
         w_confirm * confirmation[j] -
@@ -55,7 +55,7 @@ def solve_epsilon(
     # Constraints: User preferences
     epsilon = pl.LpVariable("epsilon", lowBound=0, upBound=1)
     for i in range(len(dm.reference_ranking) - 1):
-        problem += trust[i] >= trust[i + 1] + epsilon, f"Preference_{i}"
+        problem += prus[i] >= prus[i + 1] + epsilon, f"Preference_{i}"
 
     # Objective function
     problem += epsilon, "Maximize_Epsilon"
@@ -70,7 +70,7 @@ def solve_epsilon(
         for item in w_j
     ]
 
-    return Trust(
+    return Prus(
         rules,
         w_j_values,
         w_supp.varValue,

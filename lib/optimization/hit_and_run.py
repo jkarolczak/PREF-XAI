@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 import pulp as pl
+from lib.optimization.prus import Prus
 
 from lib.dms.interface_dm import IDM
-from lib.optimization.trust import Trust
 
 EPS = 1e-6
 
@@ -13,8 +13,8 @@ def solve_hr(
         dm: IDM,
         top_k: int | None = None,
         n_iters: int = 10000
-) -> list[Trust]:
-    initial_trust = solve_initial(rules, dm, top_k=top_k)
+) -> list[Prus]:
+    initial_prus = solve_initial(rules, dm, top_k=top_k)
     special_columns = [col for col in rules.columns if col.startswith("y_")] + \
                       ["support", "confirmation", "complexity", "confidence", "coverage(y)"]
     condition_cols = [col for col in rules.columns if col not in special_columns]
@@ -35,12 +35,12 @@ def solve_hr(
     comp_vals = rules_subset["complexity"].to_numpy()
 
     n_main = main_attrs.shape[1]
-    full_init_w = initial_trust.to_np()
+    full_init_w = initial_prus.to_np()
     w_active_indices = active_map
     w_fixed_indices = [n_total_conditions, n_total_conditions + 1, n_total_conditions + 2]
     w = full_init_w[w_active_indices + w_fixed_indices]
 
-    history = [initial_trust]
+    history = [initial_prus]
 
     for _ in range(n_iters):
         estr = np.random.rand(n_main - 1)
@@ -101,7 +101,7 @@ def solve_hr(
         w_conf = w[-2].item()
         w_comp = w[-1].item()
 
-        history.append(Trust(rules, w_j_values, w_supp, w_conf, w_comp))
+        history.append(Prus(rules, w_j_values, w_supp, w_conf, w_comp))
 
     return history
 
@@ -110,7 +110,7 @@ def solve_initial(
         rules: pd.DataFrame,
         dm: IDM,
         top_k: int | None = None
-) -> Trust:
+) -> Prus:
     special_columns = [col for col in rules.columns if col.startswith("y_")] + ["support", "confirmation", "complexity",
                                                                                 "confidence", "coverage(y)"]
 
@@ -143,8 +143,8 @@ def solve_initial(
     w_confirm = pl.LpVariable("w_confirm", lowBound=0, upBound=1)
     w_complex = pl.LpVariable("w_complex", lowBound=0, upBound=1)
 
-    # Trust calculation definition
-    trust = [
+    # Prus calculation definition
+    prus = [
         pl.lpSum(w_j[i] * conditions[j, i] for i in range(n_conditions)) +
         w_supp * support[j] +
         w_confirm * confirmation[j] -
@@ -157,7 +157,7 @@ def solve_initial(
 
     # Constraints: User preferences
     for i in range(len(dm.reference_ranking) - 1):
-        problem += trust[i] >= trust[i + 1] + EPS, f"Preference_{i}"
+        problem += prus[i] >= prus[i + 1] + EPS, f"Preference_{i}"
 
     # Constraints: Maximize w_j to ensure being within the hypervolume
     epsilon = pl.LpVariable("epsilon", lowBound=0, upBound=1)
@@ -179,7 +179,7 @@ def solve_initial(
         for item in w_j
     ]
 
-    return Trust(
+    return Prus(
         rules,
         w_j_values,
         w_supp.varValue,
@@ -188,14 +188,14 @@ def solve_initial(
     )
 
 
-def trusts_to_centroid(trusts: list[Trust]) -> Trust:
-    arrays = [t.to_np() for t in trusts]
+def pruss_to_centroid(pruss: list[Prus]) -> Prus:
+    arrays = [t.to_np() for t in pruss]
     centroid_array = np.mean(arrays, axis=0)
-    return Trust.from_np(centroid_array, trusts[0].rules)
+    return Prus.from_np(centroid_array, pruss[0].rules)
 
 
-def rules_on_first_pos(trusts: list[Trust], rules: pd.DataFrame) -> set[int]:
-    if not trusts or rules.empty:
+def rules_on_first_pos(pruss: list[Prus], rules: pd.DataFrame) -> set[int]:
+    if not pruss or rules.empty:
         return set()
 
     special_columns = [col for col in rules.columns if col.startswith("y_")] + \
@@ -210,7 +210,7 @@ def rules_on_first_pos(trusts: list[Trust], rules: pd.DataFrame) -> set[int]:
     rules_matrix = np.hstack([cond_vals, supp_vals, conf_vals, comp_vals])
 
     w_list = []
-    for t in trusts:
+    for t in pruss:
         row = t.to_np()
         w_list.append(row)
 
