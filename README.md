@@ -1,7 +1,9 @@
-# Personalized Rule-Based Explanations for Black-Box ML Decisions
+[![ArXiV - Preprint](https://img.shields.io/badge/ArXiV-Preprint-red)](https://arxiv.org/abs/2604.19684)
 
-This repository contains the official codebase for the paper **"Personalized Rule-Based Explanations for Black-Box ML
-Decisions"** by Salvatore Greco, Jacek Karolczak, Jerzy Stefanowski, and Roman Słowiński.
+# PREF-XAI: Preference-Based Personalized Rule Explanations of Black-Box Machine Learning Models
+
+This repository contains the official codebase for the paper **"P**ersonalized Rule-Based Explanations for Black-Box ML
+Decisions**"** by Salvatore Greco, Jacek Karolczak, Roman Słowiński, and Jerzy Stefanowski.
 
 The project provides an explainable AI (XAI) framework that generates personalized, local, rule-based explanations for
 black-box machine learning models. By combining human-interpretable "if-then" decision rules with formal preference
@@ -116,3 +118,20 @@ Test how the length of the user's initial reference ranking (e.g., 5 vs 10 rules
 You can use the provided bash script to iterate over multiple datasets and configurations simultaneously:
 
     bash bulk.sh
+
+## Cite us!
+```bib
+@misc{greco2026,
+      title={PREF-XAI: Preference-Based Personalized Rule Explanations of Black-Box Machine Learning Models}, 
+      author={Salvatore Greco and Jacek Karolczak and Roman Słowiński and Jerzy Stefanowski},
+      year={2026},
+      eprint={2604.19684},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2604.19684}, 
+}
+```
+
+## Acknowledgments
+
+The research of Salvatore Greco and Roman Słowiński was funded by the National Science Centre, Poland, under the MAESTRO programme (grant number 2023/50/A/HS4/00499). The research of Jacek Karolczak and Jerzy Stefanowski was funded by the National Science Centre, Poland, under the OPUS programme (grant number 2023/51/B/ST6/00545).
