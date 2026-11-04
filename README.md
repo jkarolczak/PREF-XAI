@@ -2,8 +2,7 @@
 
 # PREF-XAI: Preference-Based Personalized Rule Explanations of Black-Box Machine Learning Models
 
-This repository contains the official codebase for the paper **"P**ersonalized Rule-Based Explanations for Black-Box ML
-Decisions**"** by Salvatore Greco, Jacek Karolczak, Roman Słowiński, and Jerzy Stefanowski.
+This repository contains the official codebase for the paper *PREF-XAI: Preference-Based Personalized Rule Explanations of Black-Box Machine Learning Models* by Salvatore Greco, Jacek Karolczak, Roman Słowiński, and Jerzy Stefanowski.
 
 The project provides an explainable AI (XAI) framework that generates personalized, local, rule-based explanations for
 black-box machine learning models. By combining human-interpretable "if-then" decision rules with formal preference
@@ -78,10 +77,8 @@ Supported datasets included in the original paper are:
 
 1. **Churn (Banking):** https://www.kaggle.com/datasets/shrutimechlearn/churn-modelling
 2. **Churn in Telecom's Dataset:** https://www.kaggle.com/datasets/becksddf/churn-in-telecoms-dataset
-3. **HELOC (Home Equity Line of Credit):**
-   Kaggle https://www.kaggle.com/datasets/averkiyoliabev/home-equity-line-of-creditheloc
-4. (Toy Example) **Breast Cancer Wisconsin (Original):
-   ** https://www.kaggle.com/datasets/mariolisboa/breast-cancer-wisconsin-original-data-set
+3. **HELOC (Home Equity Line of Credit):** https://www.kaggle.com/datasets/averkiyoliabev/home-equity-line-of-creditheloc
+4. **(Toy Example) Breast Cancer Wisconsin (Original):** https://www.kaggle.com/datasets/mariolisboa/breast-cancer-wisconsin-original-data-set
 
 ## Usage
 
