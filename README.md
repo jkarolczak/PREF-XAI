@@ -1,4 +1,4 @@
-[![ArXiV - Preprint](https://img.shields.io/badge/ArXiV-Preprint-red)](https://arxiv.org/abs/2604.19684)
+[![Manuscript - OpenAccess](https://img.shields.io/badge/Manuscript-OpenAccess-green)](https://www.sciencedirect.com/science/article/pii/S0950705126019647)
 
 # PREF-XAI: Preference-Based Personalized Rule Explanations of Black-Box Machine Learning Models
 
@@ -118,14 +118,16 @@ You can use the provided bash script to iterate over multiple datasets and confi
 
 ## Cite us!
 ```bib
-@misc{greco2026,
-      title={PREF-XAI: Preference-Based Personalized Rule Explanations of Black-Box Machine Learning Models}, 
-      author={Salvatore Greco and Jacek Karolczak and Roman Słowiński and Jerzy Stefanowski},
-      year={2026},
-      eprint={2604.19684},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2604.19684}, 
+@article{greco2027,
+  title = {PREF-XAI: Preference-based personalized rule explanations of black-box machine learning models},
+  author = {Salvatore Greco and Jacek Karolczak and Roman Słowiński and Jerzy Stefanowski},
+  journal = {Knowledge-Based Systems},
+  volume = {355},
+  pages = {117238},
+  year = {2027},
+  issn = {0950-7051},
+  doi = {https://doi.org/10.1016/j.knosys.2026.117238},
+  url = {https://www.sciencedirect.com/science/article/pii/S0950705126019647},
 }
 ```
 
